@@ -28,10 +28,10 @@ class ProblemInstance{
         std::vector<Node>& getNodes(){ return nodes; };
         std::string& getName(){ return name; };
 
-        void readInstanceFromFile(std::string filePath);
+        void readInstanceFromFile(const std::string& filePath);
         void printInstanceData() const;
-        
-
 };
+
+std::vector<ProblemInstance> readAllProblemInstances(std::string dirPath);
 
 #endif

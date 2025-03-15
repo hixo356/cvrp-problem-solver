@@ -1,13 +1,14 @@
 #include "../include/instance.h"
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <regex>
 #include <sstream>
 #include <string>
 
-void ProblemInstance::readInstanceFromFile(std::string filePath){
-    std::ifstream inputFile("data/test.txt");
+void ProblemInstance::readInstanceFromFile(const std::string& filePath){
+    std::ifstream inputFile(filePath);
     std::string line;
 
     if (!inputFile.is_open()) {
@@ -43,7 +44,7 @@ void ProblemInstance::readInstanceFromFile(std::string filePath){
     std::getline(inputFile, line);
     std::getline(inputFile, line);
 
-    // READ NODES
+    // NODES
     for (int i=0; i<this->dimension; i++) {
         struct Node node;
 
@@ -55,7 +56,7 @@ void ProblemInstance::readInstanceFromFile(std::string filePath){
     std::getline(inputFile, line);
     std::getline(inputFile, line);
 
-    // READ DEMANDS
+    // DEMANDS
     for (int i=0; i<this->dimension; i++) {
         int tmp, tmp2;
 
@@ -64,6 +65,7 @@ void ProblemInstance::readInstanceFromFile(std::string filePath){
         this->nodes[i].demand = tmp2;
     }
 
+    std::cout << "File " << filePath << " read successfully!" << std::endl;
     inputFile.close();
 }
 
@@ -80,4 +82,27 @@ void ProblemInstance::printInstanceData() const {
                   << ", Demand: " << node.demand
                   << std::endl;
     }
+}
+
+std::vector<ProblemInstance> readAllProblemInstances(std::string dirPath){
+    std::vector<ProblemInstance> instances = {};
+    
+    // check if directory doesn't exist, return empty vector
+    if (!std::filesystem::exists(dirPath) || !std::filesystem::is_directory(dirPath)) {
+        std::cerr << "Data directory doesn't exist!" << std::endl;
+        return instances;
+    }
+
+    for (const auto& file : std::filesystem::directory_iterator(dirPath)) {
+        ProblemInstance instance;
+
+        instance.readInstanceFromFile(file.path().string());
+
+        instance.printInstanceData();
+
+        instances.push_back(instance);
+    }
+    
+    std::cout << "All files read!" << std::endl;
+    return instances;
 }
