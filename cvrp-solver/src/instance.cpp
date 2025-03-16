@@ -78,11 +78,11 @@ void ProblemInstance::readInstanceFromFile(const std::string& filePath){
         vec.reserve(this->dimension+1);
     }
 
-    for (int i=1; i<this->dimension+1; i++) {
-        for (int j=1; j<this->dimension+1; j++) {
-            distanceMatrix[i][j] = distanceBetweenTwoNodes(this->nodes[i-1], this->nodes[j-1]);
-        }
-    }
+    // for (int i=1; i<this->dimension+1; i++) {
+    //     for (int j=1; j<this->dimension+1; j++) {
+    //         distanceMatrix[i][j] = distanceBetweenTwoNodes(this->nodes[i-1], this->nodes[j-1]);
+    //     }
+    // }
 
     std::cout << "File " << filePath << " read successfully!" << std::endl;
     inputFile.close();
