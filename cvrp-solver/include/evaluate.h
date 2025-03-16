@@ -5,13 +5,13 @@
 #include <vector>
 
 //finally not here
-typedef struct individual{
-    std::vector<Node*> chromosome; //preferably pointers to nodes or sth
+typedef struct individual_t{
+    std::vector<Node*> chromosome;
     float fitnessValue = 0;
-} individual;
+} individual_t;
 
 float evaluateSolution(std::vector<Node*> const& solution, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity);
 
-void evaluatePopulation(std::vector<individual>& population);
+void evaluatePopulation(std::vector<individual_t>& population);
 
 #endif

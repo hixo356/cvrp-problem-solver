@@ -36,7 +36,7 @@ float evaluateSolution(std::vector<Node*> const& solution, std::vector<std::vect
     return 1 / (totalDistance + penalty); 
 }
 
-void evaluatePopulation(std::vector<individual>& population, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity){
+void evaluatePopulation(std::vector<individual_t>& population, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity){
     for (auto& individual : population) {
         individual.fitnessValue = evaluateSolution(individual.chromosome, distanceMatrix, truckCapacity);
     }
