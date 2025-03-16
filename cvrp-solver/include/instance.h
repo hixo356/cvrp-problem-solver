@@ -22,6 +22,7 @@ class ProblemInstance{
         // ProblemInstance(std::string _name, std::vector<Node> _nodes, int _capacity, int _optimalResult);
         ProblemInstance(){};
         std::vector<Node> nodes;
+        std::vector<std::vector<float>> distanceMatrix;
     
         int& getCapacity(){ return capacity; };
         int& getOptimalResult(){ return optimalResult; };

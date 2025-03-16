@@ -6,6 +6,11 @@
 #include <regex>
 #include <sstream>
 #include <string>
+#include <cmath>
+
+float distanceBetweenTwoNodes(const Node& node1, const Node& node2){
+    return std::sqrt(std::pow(node2.x - node1.x, 2) + std::pow(node2.y - node1.y, 2));
+}
 
 void ProblemInstance::readInstanceFromFile(const std::string& filePath){
     std::ifstream inputFile(filePath);
@@ -45,6 +50,8 @@ void ProblemInstance::readInstanceFromFile(const std::string& filePath){
     std::getline(inputFile, line);
 
     // NODES
+    this->nodes.reserve(this->dimension);
+
     for (int i=0; i<this->dimension; i++) {
         struct Node node;
 
@@ -63,6 +70,18 @@ void ProblemInstance::readInstanceFromFile(const std::string& filePath){
         inputFile >> tmp >> tmp2;
 
         this->nodes[i].demand = tmp2;
+    }
+
+    // CALCULATE DISTANCES FOR LATER
+    this->distanceMatrix.reserve(this->dimension+1);
+    for (auto& vec : this->distanceMatrix) {
+        vec.reserve(this->dimension+1);
+    }
+
+    for (int i=1; i<this->dimension+1; i++) {
+        for (int j=1; j<this->dimension+1; j++) {
+            distanceMatrix[i][j] = distanceBetweenTwoNodes(this->nodes[i-1], this->nodes[j-1]);
+        }
     }
 
     std::cout << "File " << filePath << " read successfully!" << std::endl;
