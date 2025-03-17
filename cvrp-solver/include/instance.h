@@ -23,9 +23,9 @@ class ProblemInstance{
         ProblemInstance(){};
         std::vector<Node> nodes;
         std::vector<std::vector<float>> distanceMatrix;
-    
-        int& getCapacity(){ return capacity; };
-        int& getOptimalResult(){ return optimalResult; };
+
+        const int& getCapacity() const { return capacity; };
+        const int& getOptimalResult() const { return optimalResult; };
         std::vector<Node>& getNodes(){ return nodes; };
         std::string& getName(){ return name; };
 

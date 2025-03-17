@@ -44,9 +44,17 @@ void ProblemInstance::readInstanceFromFile(const std::string& filePath){
     ss.ignore(11);
     ss >> this->dimension;
 
-    // SKIP 3 LINES
+    // SKIP LINE
     std::getline(inputFile, line);
+    
+    // CAPACITY
     std::getline(inputFile, line);
+    ss.str(line);
+    ss.clear();
+    ss.ignore(10);
+    ss >> this->capacity;
+
+    // SKIP LINE
     std::getline(inputFile, line);
 
     // NODES

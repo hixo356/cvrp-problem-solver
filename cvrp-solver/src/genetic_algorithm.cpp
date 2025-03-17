@@ -1,14 +1,22 @@
 #include "../include/genetic_algorithm.h"
-#include "instance.h"
+#include "../include/instance.h"
+#include "evaluate.h"
 #include <algorithm>
 #include <iostream>
 #include <random>
+#include <ranges>
 
-void GeneticAlgorithm::initializePopulation(int const& populationSize, int const& generations, std::vector<Node>& nodes){
-    std::vector<Node*> randomChromosome(nodes.size());
+void GeneticAlgorithm::evaluatePopulation(std::vector<individual_t>& population, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity){
+    for (auto individual : population) {
+        individual.fitnessValue = evaluateSolution(individual.chromosome, distanceMatrix, truckCapacity);
+    }
+}
+
+void GeneticAlgorithm::initializePopulation(){
+    std::vector<const Node*> randomChromosome(this->problemInstance.nodes.size()-1);
 
     int i=0;
-    for (Node& node : nodes) {
+    for (const Node& node : this->problemInstance.nodes | std::views::drop(1)) {
         randomChromosome[i] = &node;
         i++;
     }
@@ -16,14 +24,30 @@ void GeneticAlgorithm::initializePopulation(int const& populationSize, int const
     std::random_device rd;
     std::mt19937 g(rd());
 
-    this->population.resize(generations);
-    this->population[0].resize(populationSize);
+    this->population.resize(this->parameters.generations);
+    this->population[0].resize(this->parameters.populationSize);
     for (individual_t& individual : this->population[0]) {
         individual_t tmp{randomChromosome, 0};
         individual = tmp;
         std::shuffle(randomChromosome.begin(), randomChromosome.end(), g);
     }
 
+    // DIVIDE INTO ROUTES
+
+    for (individual_t& individual : this->population[0]) {
+        int currentDemand = 0;
+        for (int i=0; i<individual.chromosome.size(); i++) { //const Node* node : individual.chromosome
+            currentDemand += individual.chromosome[i]->demand;
+            if (currentDemand > this->problemInstance.getCapacity()) {
+                individual.chromosome.emplace(individual.chromosome.begin()+i, this->sepNode);
+                currentDemand = 0;
+            }
+        }
+    }
+
+    // EVALUATE INITIAL POPULATION
+    evaluatePopulation(this->population[0], this->problemInstance.distanceMatrix, this->problemInstance.getCapacity());
+    
     for (const auto& individual : this->population[0]) {
         for (const auto& node : individual.chromosome) {
             std::cout << node->id << " ";
@@ -31,3 +55,18 @@ void GeneticAlgorithm::initializePopulation(int const& populationSize, int const
         std::cout << std::endl;
     }
 }
+
+int roulette(){
+    
+    return 0;
+}
+
+// int tournament(int tourSize){}
+
+// std::vector<individual_t> GeneticAlgorithm::selectGeneration(std::vector<individual_t> const& selectionPool){
+    
+// }
+
+// std::pair<individual_t, individual_t> GeneticAlgorithm::selectParents(std::vector<individual_t> const& selectionPool){
+
+// }

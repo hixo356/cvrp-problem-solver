@@ -2,7 +2,7 @@
 #include "instance.h"
 
 // node id= -1 is separator
-float evaluateSolution(std::vector<Node*> const& solution, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity){
+float evaluateSolution(std::vector<const Node*> const& solution, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity){
 
     float penalty = 0;
     float totalDistance = 0;
@@ -34,10 +34,4 @@ float evaluateSolution(std::vector<Node*> const& solution, std::vector<std::vect
     
     // return fitness value
     return 1 / (totalDistance + penalty); 
-}
-
-void evaluatePopulation(std::vector<individual_t>& population, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity){
-    for (auto& individual : population) {
-        individual.fitnessValue = evaluateSolution(individual.chromosome, distanceMatrix, truckCapacity);
-    }
 }

@@ -25,23 +25,29 @@ typedef struct results_t{
 } results_t;
 
 typedef struct individual_t{
-    std::vector<Node*> chromosome;
+    std::vector<const Node*> chromosome;
     float fitnessValue = 0;
 } individual_t;
 
 class GeneticAlgorithm{
     private:
-        // parameters_t parameters;
+        parameters_t parameters;
+        struct Node* sepNode;
         std::vector<std::vector<individual_t>> population;
-        // const ProblemInstance problemInstance;
+        const ProblemInstance problemInstance;
         
         std::vector<individual_t> selectGeneration(std::vector<individual_t> const& selectionPool);
         std::pair<individual_t, individual_t> selectParents(std::vector<individual_t> const& selectionPool);
         std::pair<individual_t, individual_t> crossover(individual_t const& parent1, individual_t const& parent2);
         individual_t mutation(individual_t const& individual);
+
+        void evaluatePopulation(std::vector<individual_t>& population, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity);
     public:
         results_t run(ProblemInstance const& problem, parameters_t& parameters);
-        void initializePopulation(int const& populationSize, int const& generations, std::vector<Node>& nodes);
+        void initializePopulation();
+
+        GeneticAlgorithm(){ sepNode = new struct Node({-1, 0, 0, 0}); }
+        ~GeneticAlgorithm(){ delete sepNode; };
 };
 
 #endif
