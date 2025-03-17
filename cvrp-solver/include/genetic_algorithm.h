@@ -36,8 +36,8 @@ class GeneticAlgorithm{
         std::vector<std::vector<individual_t>> population;
         const ProblemInstance problemInstance;
         
-        std::vector<individual_t> selectGeneration(std::vector<individual_t> const& selectionPool);
-        std::pair<individual_t, individual_t> selectParents(std::vector<individual_t> const& selectionPool);
+        std::vector<individual_t> selectGeneration(std::vector<individual_t> selectionPool);
+        std::pair<individual_t, individual_t> selectParents(std::vector<individual_t> selectionPool);
         std::pair<individual_t, individual_t> crossover(individual_t const& parent1, individual_t const& parent2);
         individual_t mutation(individual_t const& individual);
 

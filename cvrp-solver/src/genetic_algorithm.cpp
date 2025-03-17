@@ -5,6 +5,8 @@
 #include <iostream>
 #include <random>
 #include <ranges>
+#include <utility>
+#include <vector>
 
 void GeneticAlgorithm::evaluatePopulation(std::vector<individual_t>& population, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity){
     for (auto individual : population) {
@@ -63,10 +65,29 @@ int roulette(){
 
 // int tournament(int tourSize){}
 
-// std::vector<individual_t> GeneticAlgorithm::selectGeneration(std::vector<individual_t> const& selectionPool){
-    
-// }
+bool individualCompare(const individual_t& lhs, const individual_t& rhs){
+    return lhs.fitnessValue < rhs.fitnessValue;
+}
 
-// std::pair<individual_t, individual_t> GeneticAlgorithm::selectParents(std::vector<individual_t> const& selectionPool){
+std::vector<individual_t> GeneticAlgorithm::selectGeneration(std::vector<individual_t> selectionPool){
+    std::random_device rd;
+    std::mt19937 g(rd());
 
-// }
+    std::shuffle(selectionPool.begin(), selectionPool.end(), g);
+    std::sort(selectionPool.begin(), selectionPool.end(), individualCompare);
+
+    selectionPool.erase(selectionPool.begin() + this->parameters.populationSize, selectionPool.end());
+    return selectionPool;
+}
+
+std::pair<individual_t, individual_t> GeneticAlgorithm::selectParents(std::vector<individual_t> selectionPool){
+    std::random_device rd;
+    std::mt19937 g(rd());
+
+    std::shuffle(selectionPool.begin(), selectionPool.end(), g);
+    selectionPool.erase(selectionPool.begin() + this->parameters.tournamentSize, selectionPool.end());
+
+    std::sort(selectionPool.begin(), selectionPool.end(), individualCompare);
+
+    return std::make_pair(selectionPool[0], selectionPool[1]);
+}
