@@ -5,11 +5,11 @@
 #include <chrono>
 
 typedef struct parameters_t{
-    float populationSize;
+    float populationSize = 100;
     float crossoverPropability;
     float mutationPropability;
-    int tournamentSize;
-    int generations;
+    int tournamentSize = 5;
+    int generations = 100;
 } parameters_t;
 
 struct generationResult{
@@ -34,15 +34,17 @@ class GeneticAlgorithm{
         parameters_t parameters;
         struct Node* sepNode;
         std::vector<std::vector<individual_t>> population;
-        const ProblemInstance problemInstance;
+        
         
         std::vector<individual_t> selectGeneration(std::vector<individual_t> selectionPool);
         std::pair<individual_t, individual_t> selectParents(std::vector<individual_t> selectionPool);
-        std::pair<individual_t, individual_t> crossover(individual_t const& parent1, individual_t const& parent2);
+        
         individual_t mutation(individual_t const& individual);
 
         void evaluatePopulation(std::vector<individual_t>& population, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity);
     public:
+        ProblemInstance problemInstance; //const
+        std::pair<individual_t, individual_t> crossover(std::vector<const Node*> const& parent1, std::vector<const Node*> const& parent2);
         results_t run(ProblemInstance const& problem, parameters_t& parameters);
         void initializePopulation();
 
