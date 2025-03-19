@@ -2,6 +2,8 @@
 #include "../include/instance.h"
 #include "evaluate.h"
 #include <algorithm>
+#include <cfloat>
+#include <chrono>
 #include <climits>
 #include <iostream>
 #include <numeric>
@@ -9,10 +11,14 @@
 #include <ranges>
 #include <utility>
 #include <vector>
+#include <unordered_map>
 
-void GeneticAlgorithm::evaluatePopulation(std::vector<individual_t>& population, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity){
-    for (auto individual : population) {
-        individual.fitnessValue = evaluateSolution(individual.chromosome, distanceMatrix, truckCapacity);
+void GeneticAlgorithm::evaluatePopulation(std::vector<individual_t>& population){
+    for (auto& individual : population) {
+        if (individual.fitnessValue != 0) {
+            continue;
+        }
+        individual.fitnessValue = evaluateSolution(individual.chromosome, this->problemInstance.distanceMatrix, this->problemInstance.getCapacity(), this->evaluationCounter);
     }
 }
 
@@ -26,22 +32,19 @@ void GeneticAlgorithm::initializePopulation(){
         i++;
     }
 
-    std::random_device rd;
-    std::mt19937 g(rd());
-
     this->population.resize(this->parameters.generations);
     this->population[0].resize(this->parameters.populationSize);
     for (individual_t& individual : this->population[0]) {
         individual_t tmp{randomChromosome, 0};
         individual = tmp;
-        std::shuffle(randomChromosome.begin(), randomChromosome.end(), g);
+        std::shuffle(randomChromosome.begin(), randomChromosome.end(), this->gen);
     }
 
     // DIVIDE INTO ROUTES
 
     for (individual_t& individual : this->population[0]) {
         int currentDemand = 0;
-        for (int i=0; i<individual.chromosome.size(); i++) { //const Node* node : individual.chromosome
+        for (int i=0; i<individual.chromosome.size(); i++) {
             currentDemand += individual.chromosome[i]->demand;
             if (currentDemand > this->problemInstance.getCapacity()) {
                 individual.chromosome.emplace(individual.chromosome.begin()+i, this->sepNode);
@@ -51,32 +54,15 @@ void GeneticAlgorithm::initializePopulation(){
     }
 
     // EVALUATE INITIAL POPULATION
-    evaluatePopulation(this->population[0], this->problemInstance.distanceMatrix, this->problemInstance.getCapacity());
-    
-    for (const auto& individual : this->population[0]) {
-        for (const auto& node : individual.chromosome) {
-            std::cout << node->id << " ";
-        }
-        std::cout << std::endl;
-    }
+    evaluatePopulation(this->population[0]);
 }
-
-// int roulette(){
-    
-//     return 0;
-// }
-
-// int tournament(int tourSize){}
 
 bool individualCompare(const individual_t& lhs, const individual_t& rhs){
     return lhs.fitnessValue < rhs.fitnessValue;
 }
 
 std::vector<individual_t> GeneticAlgorithm::selectGeneration(std::vector<individual_t> selectionPool){
-    std::random_device rd;
-    std::mt19937 g(rd());
-
-    std::shuffle(selectionPool.begin(), selectionPool.end(), g);
+    std::shuffle(selectionPool.begin(), selectionPool.end(), this->gen);
     std::sort(selectionPool.begin(), selectionPool.end(), individualCompare);
 
     selectionPool.erase(selectionPool.begin() + this->parameters.populationSize, selectionPool.end());
@@ -84,23 +70,13 @@ std::vector<individual_t> GeneticAlgorithm::selectGeneration(std::vector<individ
 }
 
 std::pair<individual_t, individual_t> GeneticAlgorithm::selectParents(std::vector<individual_t> selectionPool){
-    std::random_device rd;
-    std::mt19937 g(rd());
-
-    std::shuffle(selectionPool.begin(), selectionPool.end(), g);
+    std::shuffle(selectionPool.begin(), selectionPool.end(), this->gen);
     selectionPool.erase(selectionPool.begin() + this->parameters.tournamentSize, selectionPool.end());
 
     std::sort(selectionPool.begin(), selectionPool.end(), individualCompare);
 
     return std::make_pair(selectionPool[0], selectionPool[1]);
 }
-
-struct findById {
-    int id;
-    bool operator()(const Node* node) const {
-        return node->id == id;
-    }
-};
 
 int findNodeIdxById(std::vector<const Node*> vec, const int& id){
     int i=0;
@@ -122,11 +98,9 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
     offspring2.chromosome.resize(chromosomeSize, emptyNodePtr);
 
     // get two randim unique points for dividing genes
-    std::random_device rd;
-    std::mt19937 g(rd());
     std::vector<int> ints(chromosomeSize);
     std::iota(ints.begin(), ints.end(), 0);
-    std::shuffle(ints.begin(), ints.end(), g);
+    std::shuffle(ints.begin(), ints.end(), this->gen);
     if (ints[0] < ints[1]) {
         p = ints[0];
         q = ints[1];
@@ -134,8 +108,8 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
         p = ints[1];
         q = ints[0];
     }
-    p = 3;
-    q = 6;
+    // p = 3;
+    // q = 6;
 
     // replace middle parts
     std::copy(parent1.begin()+p, parent1.begin()+q, offspring2.chromosome.begin()+p);
@@ -143,6 +117,11 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
 
     // fill the rest accordingly
     // offspring1
+    std::unordered_map<int, size_t> geneIndexMap1;
+    for (size_t i=0; i < parent1.size(); i++) {
+        geneIndexMap1[parent1[i]->id] = i;
+    }
+
     int i=0;
     while (i < chromosomeSize) {
         // skip middle fragment
@@ -153,13 +132,23 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
         bool found = true;
         int foundIdx = INT_MAX;
         int wantedId = parent1[i]->id;
-        int idx = findNodeIdxById(offspring1.chromosome, wantedId);
-        if (idx == chromosomeSize) found = false;
+        // int idx = findNodeIdxById(offspring1.chromosome, wantedId);
+        auto idx = geneIndexMap1.find(wantedId);
+        // if (idx == chromosomeSize) found = false;
+        // while (found) {
+        //     std::cerr << "XD" <<std::endl;
+        //     foundIdx = idx;
+        //     wantedId = parent1[idx]->id;
+        //     idx = findNodeIdxById(offspring1.chromosome, wantedId);
+        //     if (idx == chromosomeSize) found = false;
+        // }
+        if (idx == geneIndexMap1.end()) found = false;
         while (found) {
-            foundIdx = idx;
-            wantedId = parent1[idx]->id;
-            idx = findNodeIdxById(offspring1.chromosome, wantedId);
-            if (idx == chromosomeSize) found = false;
+            // std::cerr << "XD" <<std::endl;
+            foundIdx = geneIndexMap1[wantedId];
+            wantedId = parent1[foundIdx]->id;
+            auto idx = geneIndexMap1.find(wantedId);
+            if (idx == geneIndexMap1.end()) found = false;
         }
 
         if (foundIdx >= chromosomeSize) {
@@ -170,7 +159,16 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
         i++;
     }
 
+    // AKTUALIZOWAC HASH MAPE, TO MA BYC MAPA TEGO DZIECKA A NIE RODZICA, W SENSIE DWIE TRZEBA
+    // RODZICA ZEBY BRAC NODE'Y, A DZIECKA ZEBY SPRAWDZAC CZY JUZ ISTNIEJA
+    // I TAK DZIECKA UPDATE MUSI MIEC Z KAZDYM DODANIEM, WTEDY ESSA O(1) NIE
+
     // offspring2
+    std::unordered_map<int, size_t> geneIndexMap2;
+    for (size_t i=0; i < parent1.size(); i++) {
+        geneIndexMap2[parent1[i]->id] = i;
+    }
+
     i = 0;
     while (i < chromosomeSize) {
         // skip middle fragment
@@ -181,13 +179,22 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
         bool found = true;
         int foundIdx = INT_MAX;
         int wantedId = parent2[i]->id;
-        int idx = findNodeIdxById(offspring2.chromosome, wantedId);
-        if (idx == chromosomeSize) found = false;
+        // int idx = findNodeIdxById(offspring2.chromosome, wantedId);
+        // if (idx == chromosomeSize) found = false;
+        // while (found) {
+        //     foundIdx = idx;
+        //     wantedId = parent2[idx]->id;
+        //     idx = findNodeIdxById(offspring2.chromosome, wantedId);
+        //     if (idx == chromosomeSize) found = false;
+        // }
+        auto idx = geneIndexMap2.find(wantedId);
+        if (idx == geneIndexMap2.end()) found = false;
         while (found) {
-            foundIdx = idx;
-            wantedId = parent2[idx]->id;
-            idx = findNodeIdxById(offspring2.chromosome, wantedId);
-            if (idx == chromosomeSize) found = false;
+            // std::cerr << "XD" <<std::endl;
+            foundIdx = geneIndexMap2[wantedId];
+            wantedId = parent2[foundIdx]->id;
+            auto idx = geneIndexMap2.find(wantedId);
+            if (idx == geneIndexMap2.end()) found = false;
         }
 
         if (foundIdx >= chromosomeSize) {
@@ -198,5 +205,82 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
         i++;
     }
 
+    offspring1.fitnessValue = evaluateSolution(offspring1.chromosome, this->problemInstance.distanceMatrix, this->problemInstance.getCapacity(), this->evaluationCounter);
+    offspring2.fitnessValue = evaluateSolution(offspring2.chromosome, this->problemInstance.distanceMatrix, this->problemInstance.getCapacity(), this->evaluationCounter);
+
     return std::make_pair(offspring1, offspring2);
+}
+
+void GeneticAlgorithm::mutation(individual_t& individual){
+    std::vector<int> ints(individual.chromosome.size()-1);
+    std::iota(ints.begin(), ints.end(), 0);
+    std::shuffle(ints.begin(), ints.end(), this->gen);
+    std::swap(individual.chromosome[ints[0]], individual.chromosome[ints[1]]);
+    individual.fitnessValue = evaluateSolution(individual.chromosome, this->problemInstance.distanceMatrix, this->problemInstance.getCapacity(), this->evaluationCounter);
+}
+
+generationResult GeneticAlgorithm::summarizePopulation(std::vector<individual_t> const& population) const {
+    float totalFitness = 0;
+    float bestFitness = 0;
+    float worstFitness = FLT_MAX;
+    for (const auto& individual : population) {
+        if (individual.fitnessValue > bestFitness) {
+            bestFitness = individual.fitnessValue;
+        } else if (individual.fitnessValue < worstFitness) {
+            worstFitness = individual.fitnessValue;
+        }
+        totalFitness += individual.fitnessValue;
+    }
+    float averageFitness = totalFitness / population.size();
+
+    return {bestFitness, averageFitness, worstFitness};
+}
+
+results_t GeneticAlgorithm::run(ProblemInstance const& _problem, parameters_t& _parameters){
+    this->population.clear();
+    this->evaluationCounter = 0;
+    this->problemInstance = _problem;
+    this->parameters = _parameters;
+    std::vector<generationResult> allGenResults(this->parameters.generations);
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+    initializePopulation();
+    std::cout << "Population initialized!" << std::endl;
+    for (int generation=0; generation < this->parameters.generations-1; generation++) {
+        std::cerr << "Generation " << generation << " proceeding...      ";
+        allGenResults[generation] = summarizePopulation(this->population[generation]);
+        
+        std::pair<individual_t, individual_t> parents = selectParents(this->population[generation]);
+        std::pair<individual_t, individual_t> children;
+
+        if (dist(gen) < this->parameters.crossoverPropability) {
+            children = crossover(parents.first.chromosome, parents.second.chromosome);
+        }
+
+        if (dist(gen) < this->parameters.mutationPropability) {
+            mutation(children.first);
+        }
+
+        if (dist(gen) < this->parameters.mutationPropability) {
+            mutation(children.second);
+        }
+
+        std::vector<individual_t> selectionPool = this->population[generation];
+        selectionPool.push_back(children.first);
+        selectionPool.push_back(children.second);
+
+        std::cout << "DONE!" << std::endl;
+
+        this->population[generation+1] = selectGeneration(selectionPool);
+    }
+
+    std::cout << "All generations done!" << std::endl;
+
+    auto stop = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double> time = stop - start;
+
+    return {allGenResults, time, this->evaluationCounter};
 }

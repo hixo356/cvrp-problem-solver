@@ -3,13 +3,14 @@
 
 #include "instance.h"
 #include <chrono>
+#include <random>
 
 typedef struct parameters_t{
-    float populationSize = 100;
+    int generations;
+    int populationSize;
+    int tournamentSize;
     float crossoverPropability;
     float mutationPropability;
-    int tournamentSize = 5;
-    int generations = 100;
 } parameters_t;
 
 struct generationResult{
@@ -31,24 +32,24 @@ typedef struct individual_t{
 
 class GeneticAlgorithm{
     private:
-        parameters_t parameters;
+        std::mt19937 gen;
         struct Node* sepNode;
         std::vector<std::vector<individual_t>> population;
-        
-        
+        int evaluationCounter = 0;
+        ProblemInstance problemInstance;
+        parameters_t parameters;
+
+        void initializePopulation();
+        void mutation(individual_t& individual);
+        void evaluatePopulation(std::vector<individual_t>& population);
+        generationResult summarizePopulation(std::vector<individual_t> const& population) const;
         std::vector<individual_t> selectGeneration(std::vector<individual_t> selectionPool);
         std::pair<individual_t, individual_t> selectParents(std::vector<individual_t> selectionPool);
-        
-        individual_t mutation(individual_t const& individual);
-
-        void evaluatePopulation(std::vector<individual_t>& population, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity);
-    public:
-        ProblemInstance problemInstance; //const
         std::pair<individual_t, individual_t> crossover(std::vector<const Node*> const& parent1, std::vector<const Node*> const& parent2);
-        results_t run(ProblemInstance const& problem, parameters_t& parameters);
-        void initializePopulation();
+    public:
+        results_t run(ProblemInstance const& _problem, parameters_t& _parameters);
 
-        GeneticAlgorithm(){ sepNode = new struct Node({-1, 0, 0, 0}); }
+        GeneticAlgorithm() : gen(std::random_device{}()), sepNode(new struct Node({-1, 0, 0, 0})) {};
         ~GeneticAlgorithm(){ delete sepNode; };
 };
 

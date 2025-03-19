@@ -2,7 +2,8 @@
 #include "instance.h"
 
 // node id= -1 is separator
-float evaluateSolution(std::vector<const Node*> const& solution, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity){
+float evaluateSolution(std::vector<const Node*> const& solution, std::vector<std::vector<float>> const& distanceMatrix, const int& truckCapacity, int& counter){
+    counter++;
 
     float penalty = 0;
     float totalDistance = 0;

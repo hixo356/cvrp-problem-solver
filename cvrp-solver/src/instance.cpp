@@ -81,16 +81,16 @@ void ProblemInstance::readInstanceFromFile(const std::string& filePath){
     }
 
     // CALCULATE DISTANCES FOR LATER
-    this->distanceMatrix.reserve(this->dimension+1);
+    this->distanceMatrix.resize(this->dimension+1);
     for (auto& vec : this->distanceMatrix) {
-        vec.reserve(this->dimension+1);
+        vec.resize(this->dimension+1);
     }
 
-    // for (int i=1; i<this->dimension+1; i++) {
-    //     for (int j=1; j<this->dimension+1; j++) {
-    //         distanceMatrix[i][j] = distanceBetweenTwoNodes(this->nodes[i-1], this->nodes[j-1]);
-    //     }
-    // }
+    for (int i=1; i<this->dimension+1; i++) {
+        for (int j=1; j<this->dimension+1; j++) {
+            distanceMatrix[i][j] = distanceBetweenTwoNodes(this->nodes[i-1], this->nodes[j-1]);
+        }
+    }
 
     std::cout << "File " << filePath << " read successfully!" << std::endl;
     inputFile.close();
@@ -125,7 +125,7 @@ std::vector<ProblemInstance> readAllProblemInstances(std::string dirPath){
 
         instance.readInstanceFromFile(file.path().string());
 
-        instance.printInstanceData();
+        // instance.printInstanceData();
 
         instances.push_back(instance);
     }
