@@ -118,8 +118,11 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
     // fill the rest accordingly
     // offspring1
     std::unordered_map<int, size_t> geneIndexMap1;
-    for (size_t i=0; i < parent1.size(); i++) {
-        geneIndexMap1[parent1[i]->id] = i;
+    for (size_t i=0; i < offspring1.chromosome.size(); i++) {
+        int _id = offspring1.chromosome[i]->id;
+        if (_id != 0) {
+            geneIndexMap1[_id] = i;
+        }
     }
 
     int i=0;
@@ -129,11 +132,13 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
             i = q;
         }
 
+        // std::cout << "Offspring1 i: " << i << std::endl;
+
         bool found = true;
-        int foundIdx = INT_MAX;
+        int foundIdx = i;
         int wantedId = parent1[i]->id;
         // int idx = findNodeIdxById(offspring1.chromosome, wantedId);
-        auto idx = geneIndexMap1.find(wantedId);
+        // auto idx = geneIndexMap1.find(wantedId);
         // if (idx == chromosomeSize) found = false;
         // while (found) {
         //     std::cerr << "XD" <<std::endl;
@@ -142,20 +147,30 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
         //     idx = findNodeIdxById(offspring1.chromosome, wantedId);
         //     if (idx == chromosomeSize) found = false;
         // }
-        if (idx == geneIndexMap1.end()) found = false;
-        while (found) {
-            // std::cerr << "XD" <<std::endl;
+        // if (idx == geneIndexMap1.end()) found = false;
+        // while (found) {
+        //     // std::cerr << "XD" <<std::endl;
+        //     foundIdx = geneIndexMap1[wantedId];
+        //     wantedId = parent1[foundIdx]->id;
+        //     auto idx = geneIndexMap1.find(wantedId);
+        //     if (idx == geneIndexMap1.end()) found = false;
+        // }
+
+        while (geneIndexMap1.find(wantedId) != geneIndexMap1.end()){
             foundIdx = geneIndexMap1[wantedId];
             wantedId = parent1[foundIdx]->id;
-            auto idx = geneIndexMap1.find(wantedId);
-            if (idx == geneIndexMap1.end()) found = false;
+            if (wantedId == -1) {
+                break;
+            }
         }
 
-        if (foundIdx >= chromosomeSize) {
-            offspring1.chromosome[i] = parent1[i];
+        if (foundIdx != chromosomeSize) {
+            offspring1.chromosome[i] = parent1[foundIdx];
         } else {
             offspring1.chromosome[i] = parent1[foundIdx];
         }
+
+        geneIndexMap1[offspring1.chromosome[i]->id] = i;
         i++;
     }
 
@@ -165,9 +180,15 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
 
     // offspring2
     std::unordered_map<int, size_t> geneIndexMap2;
-    for (size_t i=0; i < parent1.size(); i++) {
-        geneIndexMap2[parent1[i]->id] = i;
+    for (size_t i=0; i < offspring2.chromosome.size(); i++) {
+        int _id = offspring2.chromosome[i]->id;
+        if (_id != 0) {
+            geneIndexMap2[_id] = i;
+        }
     }
+    // for (size_t i=0; i < parent1.size(); i++) {
+    //     geneIndexMap2[parent1[i]->id] = i;
+    // }
 
     i = 0;
     while (i < chromosomeSize) {
@@ -176,8 +197,10 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
             i = q;
         }
 
+        // std::cout << "Offspring2 i: " << i << std::endl;
+
         bool found = true;
-        int foundIdx = INT_MAX;
+        int foundIdx = i;
         int wantedId = parent2[i]->id;
         // int idx = findNodeIdxById(offspring2.chromosome, wantedId);
         // if (idx == chromosomeSize) found = false;
@@ -187,20 +210,65 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
         //     idx = findNodeIdxById(offspring2.chromosome, wantedId);
         //     if (idx == chromosomeSize) found = false;
         // }
-        auto idx = geneIndexMap2.find(wantedId);
-        if (idx == geneIndexMap2.end()) found = false;
-        while (found) {
-            // std::cerr << "XD" <<std::endl;
+        // auto idx = geneIndexMap2.find(wantedId);
+        // if (idx == geneIndexMap2.end()) found = false;
+        // while (found) {
+        //     // std::cerr << "XD" <<std::endl;
+        //     foundIdx = geneIndexMap2[wantedId];
+        //     wantedId = parent2[foundIdx]->id;
+        //     auto idx = geneIndexMap2.find(wantedId);
+        //     if (idx == geneIndexMap2.end()) found = false;
+        // }
+
+        while (geneIndexMap2.find(wantedId) != geneIndexMap2.end()){
             foundIdx = geneIndexMap2[wantedId];
             wantedId = parent2[foundIdx]->id;
-            auto idx = geneIndexMap2.find(wantedId);
-            if (idx == geneIndexMap2.end()) found = false;
+            if (wantedId == -1) {
+                break;
+            }
         }
 
-        if (foundIdx >= chromosomeSize) {
-            offspring2.chromosome[i] = parent2[i];
+
+
+        if (foundIdx != chromosomeSize) {
+            offspring2.chromosome[i] = parent2[foundIdx];
         } else {
             offspring2.chromosome[i] = parent2[foundIdx];
+        }
+
+        geneIndexMap2[offspring2.chromosome[i]->id] = i;
+        i++;
+    }
+
+    // FIX ANY POTENTIAL DOUBLE -1 NODES AND -1 A THE BEGINNING
+
+    if (offspring1.chromosome[0]->id == -1) {
+        offspring1.chromosome.erase(offspring1.chromosome.begin());
+    }
+    if (offspring2.chromosome[0]->id == -1) {
+        offspring2.chromosome.erase(offspring2.chromosome.begin());
+    }
+
+    i = 0;
+    while (i < offspring1.chromosome.size()) {
+        if (offspring1.chromosome[i]->id == -1) {
+            i++;
+            while (i < offspring1.chromosome.size() && offspring1.chromosome[i]->id == -1) {
+                offspring1.chromosome.erase(offspring1.chromosome.begin() + i);
+                i++;
+            }
+        }
+        i++;
+    }
+
+    i = 0;
+    while (i < offspring2.chromosome.size()) {
+        if (offspring2.chromosome[i]->id == -1) {
+            i++;
+            while (i < offspring2.chromosome.size() && offspring2.chromosome[i]->id == -1) {
+                offspring2.chromosome.erase(offspring2.chromosome.begin() + i);
+                i++;
+            }
         }
         i++;
     }

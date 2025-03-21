@@ -45,10 +45,10 @@ class GeneticAlgorithm{
         generationResult summarizePopulation(std::vector<individual_t> const& population) const;
         std::vector<individual_t> selectGeneration(std::vector<individual_t> selectionPool);
         std::pair<individual_t, individual_t> selectParents(std::vector<individual_t> selectionPool);
-        std::pair<individual_t, individual_t> crossover(std::vector<const Node*> const& parent1, std::vector<const Node*> const& parent2);
+        
     public:
         results_t run(ProblemInstance const& _problem, parameters_t& _parameters);
-
+        std::pair<individual_t, individual_t> crossover(std::vector<const Node*> const& parent1, std::vector<const Node*> const& parent2);
         GeneticAlgorithm() : gen(std::random_device{}()), sepNode(new struct Node({-1, 0, 0, 0})) {};
         ~GeneticAlgorithm(){ delete sepNode; };
 };
