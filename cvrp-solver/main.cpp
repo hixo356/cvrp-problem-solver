@@ -1,4 +1,4 @@
-#include "genetic_algorithm.h"
+#include "include/genetic_algorithm.h"
 #include "include/instance.h"
 #include <iostream>
 #include <format>
@@ -17,7 +17,7 @@ int main(){
     results_t results;
 
     GeneticAlgorithm alg;
-    results = alg.run(problemInstances.back(), config);
+    results = alg.run(problemInstances.front(), config);
 
     std::cout << "Run time: " << results.runTime << std::endl;
     std::cout << "Evaluate calls: " << results.numberOfEvaluateCalls << std::endl;

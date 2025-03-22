@@ -41,6 +41,7 @@ class GeneticAlgorithm{
 
         void initializePopulation();
         void mutation(individual_t& individual);
+        void fixSolution(individual_t& individual);
         void evaluatePopulation(std::vector<individual_t>& population);
         generationResult summarizePopulation(std::vector<individual_t> const& population) const;
         std::vector<individual_t> selectGeneration(std::vector<individual_t> selectionPool);
