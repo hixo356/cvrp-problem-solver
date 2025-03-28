@@ -32,8 +32,10 @@ void GeneticAlgorithm::initializePopulation(){
         i++;
     }
 
-    this->population.resize(this->parameters.generations);
-    this->population[0].resize(this->parameters.populationSize);
+    // this->population.resize(this->parameters.generations);
+    std::vector<individual_t> emptyGeneration(this->parameters.populationSize);
+    this->population.push_back(emptyGeneration);
+    // this->population[0].resize(this->parameters.populationSize);
     for (individual_t& individual : this->population[0]) {
         individual_t tmp{randomChromosome, 0};
         individual = tmp;
@@ -41,16 +43,16 @@ void GeneticAlgorithm::initializePopulation(){
     }
 
     // DIVIDE INTO ROUTES
-    for (individual_t& individual : this->population[0]) {
-        int currentDemand = 0;
-        for (int i=0; i<individual.chromosome.size(); i++) {
-            currentDemand += individual.chromosome[i]->demand;
-            if (currentDemand > this->problemInstance.getCapacity()) {
-                individual.chromosome.emplace(individual.chromosome.begin()+i, this->sepNode);
-                currentDemand = 0;
-            }
-        }
-    }
+    // for (individual_t& individual : this->population[0]) {
+    //     int currentDemand = 0;
+    //     for (int i=0; i<individual.chromosome.size(); i++) {
+    //         currentDemand += individual.chromosome[i]->demand;
+    //         if (currentDemand > this->problemInstance.getCapacity()) {
+    //             individual.chromosome.emplace(individual.chromosome.begin()+i, this->sepNode);
+    //             currentDemand = 0;
+    //         }
+    //     }
+    // }
 
     // EVALUATE INITIAL POPULATION
     evaluatePopulation(this->population[0]);
@@ -140,9 +142,9 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
         while (geneIndexMap1.find(wantedId) != geneIndexMap1.end()){
             foundIdx = geneIndexMap1[wantedId];
             wantedId = parent1[foundIdx]->id;
-            if (wantedId == -1) {
-                break;
-            }
+            // if (wantedId == -1) {
+            //     break;
+            // }
         }
 
         if (foundIdx != parent1.size()) {
@@ -177,9 +179,9 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
         while (geneIndexMap2.find(wantedId) != geneIndexMap2.end()){
             foundIdx = geneIndexMap2[wantedId];
             wantedId = parent2[foundIdx]->id;
-            if (wantedId == -1) {
-                break;
-            }
+            // if (wantedId == -1) {
+            //     break;
+            // }
         }
 
         if (foundIdx != parent2.size()) {
@@ -194,8 +196,8 @@ std::pair<individual_t, individual_t> GeneticAlgorithm::crossover(std::vector<co
 
     // FIX ANY POTENTIAL DOUBLE -1 NODES AND -1 A THE BEGINNING
 
-    fixSolution(offspring1);
-    fixSolution(offspring2);
+    // fixSolution(offspring1);
+    // fixSolution(offspring2);
 
     offspring1.fitnessValue = evaluateSolution(offspring1.chromosome, this->problemInstance.distanceMatrix, this->problemInstance.getCapacity(), this->evaluationCounter);
     offspring2.fitnessValue = evaluateSolution(offspring2.chromosome, this->problemInstance.distanceMatrix, this->problemInstance.getCapacity(), this->evaluationCounter);
@@ -207,9 +209,11 @@ void GeneticAlgorithm::mutation(individual_t& individual){
     std::vector<int> ints(individual.chromosome.size()-1);
     std::iota(ints.begin(), ints.end(), 0);
     std::shuffle(ints.begin(), ints.end(), this->gen);
-    std::swap(individual.chromosome[ints[0]], individual.chromosome[ints[1]]);
+    for (int i=0; i<20; i+=2) {
+        std::swap(individual.chromosome[ints[i]], individual.chromosome[ints[i+1]]);
+    }
 
-    fixSolution(individual);
+    // fixSolution(individual);
     individual.fitnessValue = evaluateSolution(individual.chromosome, this->problemInstance.distanceMatrix, this->problemInstance.getCapacity(), this->evaluationCounter);
 }
 
@@ -235,17 +239,19 @@ results_t GeneticAlgorithm::run(ProblemInstance const& _problem, parameters_t& _
     this->evaluationCounter = 0;
     this->problemInstance = _problem;
     this->parameters = _parameters;
-    std::vector<generationResult> allGenResults(this->parameters.generations);
+    std::vector<generationResult> allGenResults; //(this->parameters.generations);
 
     auto start = std::chrono::high_resolution_clock::now();
 
     std::uniform_real_distribution<float> dist(0.0f, 1.0f);
     initializePopulation();
     std::cout << "Population initialized!" << std::endl;
-    int generation;
-    for (generation = 0; generation < this->parameters.generations-1; generation++) {
-        std::cerr << "Generation " << generation << " processing...      ";
-        allGenResults[generation] = summarizePopulation(this->population[generation]);
+
+    int generation = 0;
+    // for (generation = 0; generation < this->parameters.generations-1; generation++) {
+    while (this->evaluationCounter < this->parameters.maxEvals){
+        // std::cerr << "Generation " << generation+1 << " processing...      ";
+        allGenResults.push_back(summarizePopulation(this->population[generation]));
 
         std::pair<individual_t, individual_t> parents = selectParents(this->population[generation]);
         std::pair<individual_t, individual_t> children;
@@ -266,11 +272,19 @@ results_t GeneticAlgorithm::run(ProblemInstance const& _problem, parameters_t& _
             selectionPool.push_back(children.second);
         }
 
-        std::cout << "DONE!" << std::endl;
+        // for (auto& individual : selectionPool) {
+        //     if (dist(gen) < this->parameters.mutationPropability) {
+        //         mutation(individual);
+        //     }
+        // }
 
-        this->population[generation+1] = selectGeneration(selectionPool);
+        // std::cout << "DONE!" << std::endl;
+
+        // this->population[generation+1] = selectGeneration(selectionPool);
+        this->population.push_back(selectGeneration(selectionPool));
+        generation++;
     }
-    allGenResults[generation] = summarizePopulation(this->population[generation]);
+    // allGenResults[generation] = summarizePopulation(this->population[generation]);
 
     std::cout << "All generations done!" << std::endl;
 

@@ -6,7 +6,8 @@
 #include <random>
 
 typedef struct parameters_t{
-    int generations;
+    // int generations;
+    int maxEvals;
     int populationSize;
     int tournamentSize;
     float crossoverPropability;

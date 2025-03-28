@@ -7,17 +7,18 @@ int main(){
     std::vector<ProblemInstance> problemInstances = readAllProblemInstances("data/");
 
     parameters_t config{
-        .generations = 100,
-        .populationSize = 100,
+        // .generations = 100,
+        .maxEvals = 2000,
+        .populationSize = 200,
         .tournamentSize = 5,
         .crossoverPropability = 0.7f,
-        .mutationPropability = 0.1f
+        .mutationPropability = 0.3f
     };
 
     results_t results;
 
     GeneticAlgorithm alg;
-    results = alg.run(problemInstances.front(), config);
+    results = alg.run(problemInstances.back(), config);
 
     std::cout << "Run time: " << results.runTime << std::endl;
     std::cout << "Evaluate calls: " << results.numberOfEvaluateCalls << std::endl;
