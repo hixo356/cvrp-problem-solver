@@ -209,9 +209,7 @@ void GeneticAlgorithm::mutation(individual_t& individual){
     std::vector<int> ints(individual.chromosome.size()-1);
     std::iota(ints.begin(), ints.end(), 0);
     std::shuffle(ints.begin(), ints.end(), this->gen);
-    for (int i=0; i<20; i+=2) {
-        std::swap(individual.chromosome[ints[i]], individual.chromosome[ints[i+1]]);
-    }
+    std::swap(individual.chromosome[ints[0]], individual.chromosome[ints[1]]);
 
     // fixSolution(individual);
     individual.fitnessValue = evaluateSolution(individual.chromosome, this->problemInstance.distanceMatrix, this->problemInstance.getCapacity(), this->evaluationCounter);
@@ -234,7 +232,14 @@ generationResult GeneticAlgorithm::summarizePopulation(std::vector<individual_t>
     return {bestFitness, averageFitness, worstFitness};
 }
 
-results_t GeneticAlgorithm::run(ProblemInstance const& _problem, parameters_t& _parameters){
+void GeneticAlgorithm::elite(std::vector<individual_t>& population, std::vector<individual_t> prevPopulation){
+    std::sort(prevPopulation.begin(), prevPopulation.end(), individualCompare);
+    for (int i=0; i<this->parameters.elite; i++) {
+        population.push_back(prevPopulation[i]);
+    }
+}
+
+ga_results_t GeneticAlgorithm::run(ProblemInstance const& _problem, ga_parameters_t& _parameters){
     this->population.clear();
     this->evaluationCounter = 0;
     this->problemInstance = _problem;
@@ -245,31 +250,35 @@ results_t GeneticAlgorithm::run(ProblemInstance const& _problem, parameters_t& _
 
     std::uniform_real_distribution<float> dist(0.0f, 1.0f);
     initializePopulation();
-    std::cout << "Population initialized!" << std::endl;
+    // std::cout << "Population initialized!" << std::endl;
 
     int generation = 0;
     // for (generation = 0; generation < this->parameters.generations-1; generation++) {
     while (this->evaluationCounter < this->parameters.maxEvals){
         // std::cerr << "Generation " << generation+1 << " processing...      ";
         allGenResults.push_back(summarizePopulation(this->population[generation]));
+        std::vector<individual_t> selectionPool;
 
-        std::pair<individual_t, individual_t> parents = selectParents(this->population[generation]);
-        std::pair<individual_t, individual_t> children;
-        std::vector<individual_t> selectionPool = this->population[generation];
+        elite(selectionPool, this->population[generation]);
 
-        if (dist(gen) < this->parameters.crossoverPropability) {
-            children = crossover(parents.first.chromosome, parents.second.chromosome);
+        while (selectionPool.size() <= this->parameters.populationSize) {
+            std::pair<individual_t, individual_t> parents = selectParents(this->population[generation]);
+            std::pair<individual_t, individual_t> children;
 
-            if (dist(gen) < this->parameters.mutationPropability) {
-                mutation(children.first);
-            }
+            if (dist(gen) < this->parameters.crossoverPropability) {
+                children = crossover(parents.first.chromosome, parents.second.chromosome);
     
-            if (dist(gen) < this->parameters.mutationPropability) {
-                mutation(children.second);
+                if (dist(gen) < this->parameters.mutationPropability) {
+                    mutation(children.first);
+                }
+        
+                if (dist(gen) < this->parameters.mutationPropability) {
+                    mutation(children.second);
+                }
+    
+                selectionPool.push_back(children.first);
+                selectionPool.push_back(children.second);
             }
-
-            selectionPool.push_back(children.first);
-            selectionPool.push_back(children.second);
         }
 
         // for (auto& individual : selectionPool) {
@@ -281,12 +290,12 @@ results_t GeneticAlgorithm::run(ProblemInstance const& _problem, parameters_t& _
         // std::cout << "DONE!" << std::endl;
 
         // this->population[generation+1] = selectGeneration(selectionPool);
-        this->population.push_back(selectGeneration(selectionPool));
+        this->population.push_back(selectionPool);
         generation++;
     }
     // allGenResults[generation] = summarizePopulation(this->population[generation]);
 
-    std::cout << "All generations done!" << std::endl;
+    // std::cout << "All generations done!" << std::endl;
 
     auto stop = std::chrono::high_resolution_clock::now();
 

@@ -26,8 +26,8 @@ class ProblemInstance{
 
         const int& getCapacity() const { return capacity; };
         const int& getOptimalResult() const { return optimalResult; };
-        std::vector<Node>& getNodes(){ return nodes; };
-        std::string& getName(){ return name; };
+        const std::vector<Node>& getNodes() const { return nodes; };
+        const std::string& getName() const { return name; };
 
         void readInstanceFromFile(const std::string& filePath);
         void printInstanceData() const;
